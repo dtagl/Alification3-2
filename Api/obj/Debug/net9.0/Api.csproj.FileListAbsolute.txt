@@ -135,3 +135,11 @@ C:\Users\denta\Desktop\C#course\Therewillbe demos\Alification3\Api\obj\Debug\net
 C:\Users\denta\Desktop\C#course\Therewillbe demos\Alification3\Api\obj\Debug\net9.0\Api.pdb
 C:\Users\denta\Desktop\C#course\Therewillbe demos\Alification3\Api\obj\Debug\net9.0\Api.genruntimeconfig.cache
 C:\Users\denta\Desktop\C#course\Therewillbe demos\Alification3\Api\obj\Debug\net9.0\ref\Api.dll
+C:\Users\denta\Desktop\C#course\Therewillbe demos\Alification3\Api\bin\Debug\net9.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+C:\Users\denta\Desktop\C#course\Therewillbe demos\Alification3\Api\bin\Debug\net9.0\Microsoft.IdentityModel.Abstractions.dll
+C:\Users\denta\Desktop\C#course\Therewillbe demos\Alification3\Api\bin\Debug\net9.0\Microsoft.IdentityModel.JsonWebTokens.dll
+C:\Users\denta\Desktop\C#course\Therewillbe demos\Alification3\Api\bin\Debug\net9.0\Microsoft.IdentityModel.Logging.dll
+C:\Users\denta\Desktop\C#course\Therewillbe demos\Alification3\Api\bin\Debug\net9.0\Microsoft.IdentityModel.Protocols.dll
+C:\Users\denta\Desktop\C#course\Therewillbe demos\Alification3\Api\bin\Debug\net9.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+C:\Users\denta\Desktop\C#course\Therewillbe demos\Alification3\Api\bin\Debug\net9.0\Microsoft.IdentityModel.Tokens.dll
+C:\Users\denta\Desktop\C#course\Therewillbe demos\Alification3\Api\bin\Debug\net9.0\System.IdentityModel.Tokens.Jwt.dll

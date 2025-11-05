@@ -2,30 +2,27 @@
 using Api.Data;
 using Api.Data.Entities;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers;
 
 [ApiController]
 [Route("api/admin")]
+[Authorize(Roles = "Admin")]
 public class AdminController : ControllerBase
 {
     private readonly MyContext _context;
     public AdminController(MyContext context) => _context = context;
 
-    private async Task<bool> IsAdmin(Guid requesterId)
-    {
-        var user = await _context.Users.FindAsync(requesterId);
-        return user is { Role: Role.Admin };
-    }
+    // Global [Authorize(Roles="Admin")] is enforced; no additional checks needed here
 
     // ---------------------------
     // ✅ 1. Company overview
     // ---------------------------
     [HttpGet("overview/{companyId:guid}")]
-    public async Task<IActionResult> GetCompanyOverview(Guid companyId, [FromQuery] Guid requesterId)
+    public async Task<IActionResult> GetCompanyOverview(Guid companyId)
     {
-        if (!await IsAdmin(requesterId)) return Forbid();
 
         var totalRooms = await _context.Rooms.CountAsync(r => r.CompanyId == companyId);
         var totalUsers = await _context.Users.CountAsync(u => u.CompanyId == companyId);
@@ -50,10 +47,8 @@ public class AdminController : ControllerBase
     // ✅ 2. Room utilization (percentage of booked time)
     // ---------------------------
     [HttpGet("room-utilization/{companyId:guid}")]
-    public async Task<IActionResult> GetRoomUtilization(Guid companyId, [FromQuery] Guid requesterId)
+    public async Task<IActionResult> GetRoomUtilization(Guid companyId)
     {
-        if (!await IsAdmin(requesterId)) return Forbid();
-
         var rooms = await _context.Rooms
             .Where(r => r.CompanyId == companyId)
             .Include(r => r.Bookings)
@@ -80,10 +75,8 @@ public class AdminController : ControllerBase
     // ✅ 3. Top 5 most used rooms
     // ---------------------------
     [HttpGet("top-rooms/{companyId:guid}")]
-    public async Task<IActionResult> GetTopRooms(Guid companyId, [FromQuery] Guid requesterId)
+    public async Task<IActionResult> GetTopRooms(Guid companyId)
     {
-        if (!await IsAdmin(requesterId)) return Forbid();
-
         var topRooms = await _context.Bookings
             .Include(b => b.Room)
             .Where(b => b.Room.CompanyId == companyId)
@@ -100,10 +93,8 @@ public class AdminController : ControllerBase
     // ✅ 4. User activity stats
     // ---------------------------
     [HttpGet("user-activity/{companyId:guid}")]
-    public async Task<IActionResult> GetUserActivity(Guid companyId, [FromQuery] Guid requesterId)
+    public async Task<IActionResult> GetUserActivity(Guid companyId)
     {
-        if (!await IsAdmin(requesterId)) return Forbid();
-
         var activity = await _context.Bookings
             .Include(b => b.Room)
             .Include(b => b.User)
@@ -125,10 +116,8 @@ public class AdminController : ControllerBase
     // ✅ 5. Daily booking trends (last 7 days)
     // ---------------------------
     [HttpGet("bookings-trend/{companyId:guid}")]
-    public async Task<IActionResult> GetBookingTrends(Guid companyId, [FromQuery] Guid requesterId)
+    public async Task<IActionResult> GetBookingTrends(Guid companyId)
     {
-        if (!await IsAdmin(requesterId)) return Forbid();
-
         var weekAgo = DateTime.UtcNow.AddDays(-7);
 
         var trend = await _context.Bookings
@@ -147,9 +136,8 @@ public class AdminController : ControllerBase
     }
     //get all users
     [HttpGet("all-users/{companyId:guid}")]
-    public async Task<IActionResult> GetAllUsers(Guid companyId, [FromQuery] Guid requesterId)
+    public async Task<IActionResult> GetAllUsers(Guid companyId)
     {
-        if (!await IsAdmin(requesterId)) return Forbid();
         var users = await _context.Users
             .Where(u => u.CompanyId == companyId)
             .Select(u => new { u.Id, u.UserName, u.Role })
@@ -159,9 +147,8 @@ public class AdminController : ControllerBase
     
     //make user - admin
     [HttpPut("make-admin/{userId:guid}")]
-    public async Task<IActionResult> MakeAdmin(Guid userId, [FromQuery] Guid requesterId)
+    public async Task<IActionResult> MakeAdmin(Guid userId)
     {
-        if (!await IsAdmin(requesterId)) return Forbid();
 
         var user = await _context.Users.FindAsync(userId);
         if (user == null) return NotFound("User not found.");
@@ -173,9 +160,8 @@ public class AdminController : ControllerBase
     }
 
     [HttpPut("revoke-admin/{userId:guid}")]
-    public async Task<IActionResult> RevokeAdmin(Guid userId, [FromQuery] Guid requesterId)
+    public async Task<IActionResult> RevokeAdmin(Guid userId)
     {
-        if (!await IsAdmin(requesterId)) return Forbid();
         var user = await _context.Users.FindAsync(userId);
         if (user == null) return NotFound("User not found.");
         user.Role = Role.User;
@@ -184,9 +170,8 @@ public class AdminController : ControllerBase
     }
 
     [HttpDelete("delete-user/{userId:guid}")]
-    public async Task<IActionResult> DeleteUser(Guid userId, [FromQuery] Guid requesterId)
+    public async Task<IActionResult> DeleteUser(Guid userId)
     {
-        if (!await IsAdmin(requesterId)) return Forbid();
         var user = await _context.Users.FindAsync(userId);
         if (user == null) return NotFound("User not found.");
         _context.Users.Remove(user);
@@ -195,10 +180,9 @@ public class AdminController : ControllerBase
     }
 
     [HttpPut("Change-company-working-hours/{companyId:guid}")]
-    public async Task<IActionResult> ChangeCompanyWorkingHours(Guid companyId, [FromQuery] Guid requesterId,
+    public async Task<IActionResult> ChangeCompanyWorkingHours(Guid companyId,
         [FromBody] ChangeWorkingHoursDto dto)
     {
-        if (!await IsAdmin(requesterId)) return Forbid();
         var company = await _context.Companies.FindAsync(companyId);
         if (company == null) return NotFound("Company not found.");
         company.WorkingStart = dto.WorkingStart;
@@ -208,10 +192,9 @@ public class AdminController : ControllerBase
     }
     
     [HttpPut("change-company-name/{companyId:guid}")]
-    public async Task<IActionResult> ChangeCompanyName(Guid companyId, [FromQuery] Guid requesterId,
+    public async Task<IActionResult> ChangeCompanyName(Guid companyId,
         [FromBody] string newName)
     {
-        if (!await IsAdmin(requesterId)) return Forbid();
         var company = await _context.Companies.FindAsync(companyId);
         if (company == null) return NotFound("Company not found.");
         company.Name = newName;
@@ -220,10 +203,9 @@ public class AdminController : ControllerBase
     }
 
     [HttpPut("change-password/{companyId:guid}")]
-    public async Task<IActionResult> ChangeCompanyPassword(Guid companyId, [FromQuery] Guid requesterId,
+    public async Task<IActionResult> ChangeCompanyPassword(Guid companyId,
         [FromBody] string newPassword)
     {
-        if (!await IsAdmin(requesterId)) return Forbid();
         var company = await _context.Companies.FindAsync(companyId);
         if (company == null) return NotFound("Company not found.");
         company.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);

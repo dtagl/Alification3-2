@@ -2,21 +2,25 @@
 using Api.Data;
 using Api.Data.Entities;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers;
 
 [ApiController]
 [Route("api/rooms")]
+[Authorize]
 public class RoomController : ControllerBase
 {
     private readonly MyContext _context;
     public RoomController(MyContext context) => _context = context;
 
-    // List all rooms for a company
-    [HttpGet("company/{companyId:guid}")]
-    public async Task<IActionResult> GetCompanyRooms(Guid companyId)
+    // List all rooms for the caller's company (from JWT)
+    [HttpGet("company")]
+    public async Task<IActionResult> GetCompanyRooms()
     {
+        var companyIdClaim = HttpContext.User.FindFirst("companyId")?.Value;
+        if (!Guid.TryParse(companyIdClaim, out var companyId)) return Forbid();
         var rooms = await _context.Rooms.Where(r => r.CompanyId == companyId)
                                        .Select(r => new { r.Id, r.Name, r.Capacity, r.Description })
                                        .ToListAsync();
@@ -26,6 +30,7 @@ public class RoomController : ControllerBase
     
     // Admin: create room
     [HttpPost("create")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CreateRoom([FromBody] CreateRoomDto dto)
     {
         if (dto == null) return BadRequest();
@@ -82,6 +87,7 @@ public class RoomController : ControllerBase
 
     // Book a room (basic overlap check)
     [HttpPost("{roomId:guid}/book")]
+    [Authorize]
     public async Task<IActionResult> BookRoom(Guid roomId, [FromBody] BookDto dto)
     {
         var room = await _context.Rooms.Include(r => r.Bookings).FirstOrDefaultAsync(r => r.Id == roomId);
@@ -94,10 +100,14 @@ public class RoomController : ControllerBase
         var overlap = room.Bookings.Any(b => !(dto.EndAt <= b.StartAt || dto.StartAt >= b.EndAt));
         if (overlap) return Conflict("Time slot occupied.");
 
+        var userIdClaim = HttpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            ?? HttpContext.User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+        if (!Guid.TryParse(userIdClaim, out var userId)) return Forbid();
+
         var booking = new Booking
         {
             RoomId = roomId,
-            UserId = dto.UserId,
+            UserId = userId,
             StartAt = dto.StartAt,
             EndAt = dto.EndAt,
             TimespanId = ComputeTimespanId(dto.StartAt) // optional
@@ -135,4 +145,4 @@ public class RoomController : ControllerBase
 
 // DTOs
 public record CreateRoomDto(Guid CompanyId, string Name, int Capacity, string Description);
-public record BookDto(Guid UserId, DateTime StartAt, DateTime EndAt);
+public record BookDto(DateTime StartAt, DateTime EndAt);
