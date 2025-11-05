@@ -230,8 +230,6 @@ public class AdminController : ControllerBase
         await _context.SaveChangesAsync();
         return Ok(new { company.Id, message = "Password changed successfully." });
     }
-    
-    
 }
 // DTOs
 

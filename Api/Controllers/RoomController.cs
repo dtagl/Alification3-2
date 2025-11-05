@@ -118,7 +118,7 @@ public class RoomController : ControllerBase
         var requester = await _context.Users.FindAsync(userId);
         if (requester == null) return Forbid();
 
-        if (requester.Role != Role.Admin && booking.UserId != userId)
+        if (requester.Role != Role.Admin || booking.UserId != userId)
             return Forbid();
 
         _context.Bookings.Remove(booking);
