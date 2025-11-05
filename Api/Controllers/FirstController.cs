@@ -59,20 +59,12 @@ public class FirstController : ControllerBase
         return Ok(new { company.Id });
     }
 
-    //this should be changed cuz logic is wrong
-    //
-    //should be: user enter endpoint and user only gives tgid, and if this telegram id is in db, then it should return companyid
-    //else if there is no such id in db then it should open register or login page.
-    //
     // Login or register by Telegram id (basic)
     [HttpPost("login-telegram")]
     public async Task<IActionResult> LoginTelegram([FromBody] TelegramLoginDto dto)
     {
         if (dto == null || dto.TelegramId == 0) return BadRequest();
 
-        // NOTE: ideally validate widget with TelegramAuthService (dto.Data)
-        
-        // Register as basic User — company must be passed
         if (dto.CompanyId == Guid.Empty) return BadRequest("CompanyId required for new users.");
 
         var company = await _context.Companies.FindAsync(dto.CompanyId);
@@ -90,9 +82,8 @@ public class FirstController : ControllerBase
 
         return Ok(new { newUser.Id, newUser.CompanyId, newUser.Role });
     }
-    //my version
-    //and after this if there is no such user it should go to the first page
-    //if there is such id then we are returning company id to frontend to open company's homepage and skip this login menu
+    
+    //this is firstlayer entrypage to test if user is already logined
     [HttpPost("entrypage")]
     public async Task<IActionResult> EntryPage([FromBody] EntryPageDto dto)
     {

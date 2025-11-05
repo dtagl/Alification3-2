@@ -145,4 +145,98 @@ public class AdminController : ControllerBase
 
         return Ok(trend);
     }
+    //get all users
+    [HttpGet("all-users/{companyId:guid}")]
+    public async Task<IActionResult> GetAllUsers(Guid companyId, [FromQuery] Guid requesterId)
+    {
+        if (!await IsAdmin(requesterId)) return Forbid();
+        var users = await _context.Users
+            .Where(u => u.CompanyId == companyId)
+            .Select(u => new { u.Id, u.UserName, u.Role })
+            .ToListAsync();
+        return Ok(users);
+    } 
+    
+    //make user - admin
+    [HttpPut("make-admin/{userId:guid}")]
+    public async Task<IActionResult> MakeAdmin(Guid userId, [FromQuery] Guid requesterId)
+    {
+        if (!await IsAdmin(requesterId)) return Forbid();
+
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null) return NotFound("User not found.");
+
+        user.Role = Role.Admin;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { user.Id, user.Role });
+    }
+
+    [HttpPut("revoke-admin/{userId:guid}")]
+    public async Task<IActionResult> RevokeAdmin(Guid userId, [FromQuery] Guid requesterId)
+    {
+        if (!await IsAdmin(requesterId)) return Forbid();
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null) return NotFound("User not found.");
+        user.Role = Role.User;
+        await _context.SaveChangesAsync();
+        return Ok(new { user.Id, user.Role });
+    }
+
+    [HttpDelete("delete-user/{userId:guid}")]
+    public async Task<IActionResult> DeleteUser(Guid userId, [FromQuery] Guid requesterId)
+    {
+        if (!await IsAdmin(requesterId)) return Forbid();
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null) return NotFound("User not found.");
+        _context.Users.Remove(user);
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "User deleted successfully." });
+    }
+
+    [HttpPut("Change-company-working-hours/{companyId:guid}")]
+    public async Task<IActionResult> ChangeCompanyWorkingHours(Guid companyId, [FromQuery] Guid requesterId,
+        [FromBody] ChangeWorkingHoursDto dto)
+    {
+        if (!await IsAdmin(requesterId)) return Forbid();
+        var company = await _context.Companies.FindAsync(companyId);
+        if (company == null) return NotFound("Company not found.");
+        company.WorkingStart = dto.WorkingStart;
+        company.WorkingEnd = dto.WorkingEnd;
+        await _context.SaveChangesAsync();
+        return Ok(new { company.Id, company.WorkingStart, company.WorkingEnd });
+    }
+    
+    [HttpPut("change-company-name/{companyId:guid}")]
+    public async Task<IActionResult> ChangeCompanyName(Guid companyId, [FromQuery] Guid requesterId,
+        [FromBody] string newName)
+    {
+        if (!await IsAdmin(requesterId)) return Forbid();
+        var company = await _context.Companies.FindAsync(companyId);
+        if (company == null) return NotFound("Company not found.");
+        company.Name = newName;
+        await _context.SaveChangesAsync();
+        return Ok(new { company.Id, company.Name });
+    }
+
+    [HttpPut("change-password/{companyId:guid}")]
+    public async Task<IActionResult> ChangeCompanyPassword(Guid companyId, [FromQuery] Guid requesterId,
+        [FromBody] string newPassword)
+    {
+        if (!await IsAdmin(requesterId)) return Forbid();
+        var company = await _context.Companies.FindAsync(companyId);
+        if (company == null) return NotFound("Company not found.");
+        company.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        await _context.SaveChangesAsync();
+        return Ok(new { company.Id, message = "Password changed successfully." });
+    }
+    
+    
+}
+// DTOs
+
+public class ChangeWorkingHoursDto
+{
+    public TimeSpan WorkingStart { get; set; }
+    public TimeSpan WorkingEnd { get; set; }
 }

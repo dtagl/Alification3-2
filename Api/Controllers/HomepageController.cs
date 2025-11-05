@@ -13,14 +13,20 @@ public class HomepageController : ControllerBase
     public HomepageController(MyContext context) => _context = context;
 
     // My bookings split by active / expired
-    [HttpGet("my-bookings/{userId:guid}")]
-    public async Task<IActionResult> MyBookings(Guid userId)
+    [HttpGet("my-bookings/{telegramId:long}")]
+    public async Task<IActionResult> MyBookings(long telegramId)
     {
         var now = DateTime.UtcNow;
+
+        var user = await _context.Users
+            .FirstOrDefaultAsync(u => u.TelegramId == telegramId);
+
+        if (user == null)
+            return NotFound();
+
         var bookings = await _context.Bookings
             .Include(b => b.Room)
-            .Where(b => b.UserId == userId)
-            .OrderByDescending(b => b.StartAt)
+            .Where(b => b.UserId == user.Id)
             .ToListAsync();
 
         var active = bookings.Where(b => b.EndAt >= now).ToList();
@@ -28,6 +34,7 @@ public class HomepageController : ControllerBase
 
         return Ok(new { active, past });
     }
+
 
     // Available rooms now (basic: rooms with no ongoing booking at now)
     [HttpGet("available-now/{companyId:guid}")]
