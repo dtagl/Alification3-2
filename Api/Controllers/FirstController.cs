@@ -34,7 +34,9 @@ public class FirstController : ControllerBase
         var company = new Company
         {
             Name = dto.CompanyName,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password)
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+            WorkingStart = dto.WorkingStart,
+            WorkingEnd = dto.WorkingEnd
         };
 
         await _context.Companies.AddAsync(company);
@@ -57,6 +59,11 @@ public class FirstController : ControllerBase
         return Ok(new { company.Id });
     }
 
+    //this should be changed cuz logic is wrong
+    //
+    //should be: user enter endpoint and user only gives tgid, and if this telegram id is in db, then it should return companyid
+    //else if there is no such id in db then it should open register or login page.
+    //
     // Login or register by Telegram id (basic)
     [HttpPost("login-telegram")]
     public async Task<IActionResult> LoginTelegram([FromBody] TelegramLoginDto dto)
@@ -64,12 +71,7 @@ public class FirstController : ControllerBase
         if (dto == null || dto.TelegramId == 0) return BadRequest();
 
         // NOTE: ideally validate widget with TelegramAuthService (dto.Data)
-        // For now assume telegram data valid if provided
-        var user = await _context.Users.Include(u => u.Company)
-            .FirstOrDefaultAsync(u => u.TelegramId == dto.TelegramId);
-
-        if (user != null) return Ok(new { user.Id, user.UserName, user.Role });
-
+        
         // Register as basic User — company must be passed
         if (dto.CompanyId == Guid.Empty) return BadRequest("CompanyId required for new users.");
 
@@ -79,17 +81,29 @@ public class FirstController : ControllerBase
         var newUser = new User
         {
             TelegramId = dto.TelegramId,
-            UserName = dto.UserName ?? $"tg_{dto.TelegramId}",
+            UserName = dto.UserName,
             CompanyId = company.Id,
             Role = Role.User
         };
         _context.Users.Add(newUser);
         await _context.SaveChangesAsync();
 
-        return Ok(new { newUser.Id, newUser.UserName });
+        return Ok(new { newUser.Id, newUser.CompanyId, newUser.Role });
+    }
+    //my version
+    //and after this if there is no such user it should go to the first page
+    //if there is such id then we are returning company id to frontend to open company's homepage and skip this login menu
+    [HttpPost("entrypage")]
+    public async Task<IActionResult> EntryPage([FromBody] EntryPageDto dto)
+    {
+        if (dto.telegramId == 0) return BadRequest();
+        var user = _context.Users.FirstOrDefault(u => u.TelegramId == dto.telegramId);
+        if (user == null) return NotFound("User not found.");
+        else return Ok(new{user.Id, user.CompanyId, user.Role} );
     }
 }
 
 // DTOs
-public record CreateCompanyDto(string CompanyName, string Password, long? TelegramId, string UserName);
+public record EntryPageDto(long telegramId);
+public record CreateCompanyDto(string CompanyName, string Password, long? TelegramId, string UserName, TimeSpan WorkingStart,TimeSpan WorkingEnd);
 public record TelegramLoginDto(long TelegramId, Guid CompanyId, string UserName, Dictionary<string, string> Data);

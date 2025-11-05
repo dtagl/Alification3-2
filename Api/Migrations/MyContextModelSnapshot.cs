@@ -66,6 +66,12 @@ namespace Api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<TimeSpan>("WorkingEnd")
+                        .HasColumnType("interval");
+
+                    b.Property<TimeSpan>("WorkingStart")
+                        .HasColumnType("interval");
+
                     b.HasKey("Id");
 
                     b.ToTable("Companies");

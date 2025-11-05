@@ -23,6 +23,7 @@ public class RoomController : ControllerBase
         return Ok(rooms);
     }
 
+    
     // Admin: create room
     [HttpPost("create")]
     public async Task<IActionResult> CreateRoom([FromBody] CreateRoomDto dto)
@@ -42,6 +43,42 @@ public class RoomController : ControllerBase
         await _context.SaveChangesAsync();
         return Ok(new { room.Id });
     }
+    
+    
+    [HttpGet("{roomId:guid}/timeslots")]
+    public async Task<IActionResult> GetAvailableTimeslots(Guid roomId, [FromQuery] DateTime date)
+    {
+        date = DateTime.SpecifyKind(date, DateTimeKind.Utc);
+
+        var room = await _context.Rooms.Include(r => r.Company)
+            .FirstOrDefaultAsync(r => r.Id == roomId);
+        if (room == null) return NotFound();
+
+        var company = room.Company;
+        var start = date.Date.Add(company.WorkingStart);
+        var end = date.Date.Add(company.WorkingEnd);
+
+        // get all bookings for this room on this date
+        var bookings = await _context.Bookings
+            .Where(b => b.RoomId == roomId && b.StartAt.Date == date.Date)
+            .ToListAsync();
+
+        var slots = new Dictionary<DateTime, bool>();
+
+        for (var time = start; time < end; time = time.AddMinutes(15))
+        {
+            // find if any booking overlaps with this slot
+            bool isBooked = bookings.Any(b =>
+                b.StartAt <= time && b.EndAt > time);
+
+            // booked → false (not available)
+            slots[time] = !isBooked;
+        }
+
+        return Ok(slots);
+    }
+
+
 
     // Book a room (basic overlap check)
     [HttpPost("{roomId:guid}/book")]
@@ -72,16 +109,16 @@ public class RoomController : ControllerBase
 
     // Cancel own booking (or admin can cancel any if extended)
     [HttpDelete("booking/{bookingId:guid}")]
-    public async Task<IActionResult> CancelBooking(Guid bookingId, [FromQuery] Guid requesterId)
+    public async Task<IActionResult> CancelBooking(Guid bookingId, [FromQuery] Guid userId)
     {
         var booking = await _context.Bookings.FindAsync(bookingId);
         if (booking == null) return NotFound();
 
         // allow cancel if requester is owner or admin (simple check)
-        var requester = await _context.Users.FindAsync(requesterId);
+        var requester = await _context.Users.FindAsync(userId);
         if (requester == null) return Forbid();
 
-        if (requester.Role != Role.Admin && booking.UserId != requesterId)
+        if (requester.Role != Role.Admin && booking.UserId != userId)
             return Forbid();
 
         _context.Bookings.Remove(booking);

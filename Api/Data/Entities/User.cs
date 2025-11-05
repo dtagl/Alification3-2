@@ -10,10 +10,10 @@ public class User
     // Telegram provided id
     public long TelegramId { get; set; }
 
-    public string UserName { get; set; }
+    public string UserName { get; set; } = default!;
 
     public Guid CompanyId { get; set; }
-    public Company Company { get; set; }
+    public Company Company { get; set; } = default!;
 
     public Role Role { get; set; } = Role.User;
 

@@ -31,7 +31,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowLocal");
-app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 

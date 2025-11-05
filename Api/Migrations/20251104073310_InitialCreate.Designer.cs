@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Api.Migrations
 {
     [DbContext(typeof(MyContext))]
-    [Migration("20251103203130_intitialcreate")]
-    partial class intitialcreate
+    [Migration("20251104073310_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -68,6 +68,12 @@ namespace Api.Migrations
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<TimeSpan>("WorkingEnd")
+                        .HasColumnType("interval");
+
+                    b.Property<TimeSpan>("WorkingStart")
+                        .HasColumnType("interval");
 
                     b.HasKey("Id");
 
