@@ -120,7 +120,7 @@ public class FirstController : ControllerBase
         }
 
         var token = GenerateToken(adminUser);
-        return Ok(new { token});
+        return Ok(token);
     }
 
     // Login or register by Telegram id (returns JWT)
@@ -135,9 +135,16 @@ public class FirstController : ControllerBase
 
         if (user == null)
         {
-            if (dto.CompanyId == Guid.Empty) return BadRequest("CompanyId required for new users.");
-            var company = await _context.Companies.FindAsync(dto.CompanyId);
+            // New user registration - requires company name and password
+            if (string.IsNullOrWhiteSpace(dto.CompanyName)) return BadRequest("CompanyName required for new users.");
+            if (string.IsNullOrWhiteSpace(dto.CompanyPassword)) return BadRequest("CompanyPassword required for new users.");
+            
+            var company = await _context.Companies.FirstOrDefaultAsync(c => c.Name == dto.CompanyName);
             if (company == null) return NotFound("Company not found.");
+
+            // Verify company password
+            if (!BCrypt.Net.BCrypt.Verify(dto.CompanyPassword, company.PasswordHash))
+                return Unauthorized("Invalid company password.");
 
             user = new User
             {
@@ -151,7 +158,7 @@ public class FirstController : ControllerBase
         }
 
         var token = GenerateToken(user);
-        return Ok(new { token});
+        return Ok(token);
     }
     
     //this is firstlayer entrypage to test if user is already logined (returns JWT token + companyId)
@@ -163,12 +170,12 @@ public class FirstController : ControllerBase
         if (user == null) return NotFound("User not found.");
         
         var token = GenerateToken(user);
-        return Ok(new { token});
+        return Ok(token);
     }
 }
 
 // DTOs
 public record EntryPageDto(long telegramId);
-public record TelegramLoginDto(long TelegramId, Guid CompanyId, string? UserName);
+public record TelegramLoginDto(long TelegramId, string? CompanyName, string? CompanyPassword, string? UserName);
 
 public record CreateCompanyDto(string CompanyName, string Password, long? TelegramId, string UserName, TimeSpan WorkingStart,TimeSpan WorkingEnd);

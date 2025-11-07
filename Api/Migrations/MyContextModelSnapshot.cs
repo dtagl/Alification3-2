@@ -77,6 +77,29 @@ namespace Api.Migrations
                     b.ToTable("Companies");
                 });
 
+            modelBuilder.Entity("Api.Data.Entities.NotificationSent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BookingId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("NotificationType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookingId");
+
+                    b.ToTable("NotificationsSent");
+                });
+
             modelBuilder.Entity("Api.Data.Entities.Room", b =>
                 {
                     b.Property<Guid>("Id")
@@ -150,6 +173,17 @@ namespace Api.Migrations
                     b.Navigation("Room");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Api.Data.Entities.NotificationSent", b =>
+                {
+                    b.HasOne("Api.Data.Entities.Booking", "Booking")
+                        .WithMany()
+                        .HasForeignKey("BookingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Booking");
                 });
 
             modelBuilder.Entity("Api.Data.Entities.Room", b =>

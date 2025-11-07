@@ -1,4 +1,7 @@
 
+
+
+// не используется в текущей версии, но может пригодиться для будущей интеграции с Telegram
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.WebUtilities;

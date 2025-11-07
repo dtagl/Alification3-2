@@ -1,12 +1,14 @@
 // File: Program.cs
 using Api.Data;
 using Api.Services;
+using Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Caching.StackExchangeRedis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,11 +42,39 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 builder.Services.AddScoped<TelegramAuthService>();
+builder.Services.AddScoped<IRoomService, RoomService>();
+builder.Services.AddScoped<IHomepageService, HomepageService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
+
+// HTTP Client Factory для Telegram Bot API
+builder.Services.AddHttpClient();
+
+// Telegram Notification Service
+builder.Services.AddScoped<ITelegramNotificationService, TelegramNotificationService>();
+
+// Background Service for booking notifications
+builder.Services.AddHostedService<BookingNotificationBackgroundService>();
 
 // DB: replace "Default" connection string in appsettings.json
 builder.Services.AddDbContext<MyContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default"))
 );
+
+var redisConnection = builder.Configuration.GetConnectionString("Redis")
+    ?? builder.Configuration.GetValue<string>("Redis:Configuration");
+
+if (!string.IsNullOrWhiteSpace(redisConnection))
+{
+    builder.Services.AddStackExchangeRedisCache(options =>
+    {
+        options.Configuration = redisConnection;
+        options.InstanceName = "rooms:";
+    });
+}
+else
+{
+    builder.Services.AddDistributedMemoryCache();
+}
 
 // CORS (allow Telegram webapp origin during dev; adjust in prod)
 builder.Services.AddCors(options =>
@@ -66,7 +96,21 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = jwtSection["Issuer"],
             ValidAudience = jwtSection["Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(key)
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            ClockSkew = TimeSpan.Zero // Убираем запас времени для проверки срока действия
+        };
+        
+        // Правильная обработка заголовка Authorization
+        options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                if (context.Exception is Microsoft.IdentityModel.Tokens.SecurityTokenExpiredException)
+                {
+                    context.Response.Headers["Token-Expired"] = "true";
+                }
+                return Task.CompletedTask;
+            }
         };
     });
 builder.Services.AddAuthorization();

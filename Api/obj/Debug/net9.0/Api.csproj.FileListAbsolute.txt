@@ -143,3 +143,6 @@ C:\Users\denta\Desktop\C#course\Therewillbe demos\Alification3\Api\bin\Debug\net
 C:\Users\denta\Desktop\C#course\Therewillbe demos\Alification3\Api\bin\Debug\net9.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
 C:\Users\denta\Desktop\C#course\Therewillbe demos\Alification3\Api\bin\Debug\net9.0\Microsoft.IdentityModel.Tokens.dll
 C:\Users\denta\Desktop\C#course\Therewillbe demos\Alification3\Api\bin\Debug\net9.0\System.IdentityModel.Tokens.Jwt.dll
+C:\Users\denta\Desktop\C#course\Therewillbe demos\Alification3\Api\bin\Debug\net9.0\Microsoft.Extensions.Caching.StackExchangeRedis.dll
+C:\Users\denta\Desktop\C#course\Therewillbe demos\Alification3\Api\bin\Debug\net9.0\Pipelines.Sockets.Unofficial.dll
+C:\Users\denta\Desktop\C#course\Therewillbe demos\Alification3\Api\bin\Debug\net9.0\StackExchange.Redis.dll

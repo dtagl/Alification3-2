@@ -12,6 +12,7 @@ public class MyContext : DbContext
     public DbSet<Company> Companies { get; set; }
     public DbSet<Room> Rooms { get; set; }
     public DbSet<Booking> Bookings { get; set; }
+    public DbSet<NotificationSent> NotificationsSent { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -34,6 +35,12 @@ public class MyContext : DbContext
             .HasMany(r => r.Bookings)
             .WithOne(b => b.Room)
             .HasForeignKey(b => b.RoomId);
+
+        modelBuilder.Entity<Booking>()
+            .HasMany<NotificationSent>()
+            .WithOne(n => n.Booking)
+            .HasForeignKey(n => n.BookingId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         // additional constraints can be added here
     }

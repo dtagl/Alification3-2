@@ -1,9 +1,10 @@
 // File: Controllers/RoomController.cs
-using Api.Data;
-using Api.Data.Entities;
-using Microsoft.AspNetCore.Mvc;
+using Api.Contracts.Rooms;
+using Api.Services.Exceptions;
+using Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
 
@@ -12,19 +13,51 @@ namespace Api.Controllers;
 [Authorize]
 public class RoomController : ControllerBase
 {
-    private readonly MyContext _context;
-    public RoomController(MyContext context) => _context = context;
+    private readonly IRoomService _roomService;
+
+    public RoomController(IRoomService roomService)
+    {
+        _roomService = roomService;
+    }
+
+    // Helper: get CompanyId from JWT
+    private Guid CompanyId
+    {
+        get
+        {
+            var companyIdClaim = HttpContext.User.FindFirst("companyId")?.Value;
+            if (string.IsNullOrEmpty(companyIdClaim) || !Guid.TryParse(companyIdClaim, out var companyId))
+                throw new UnauthorizedAccessException("CompanyId not found in token.");
+            return companyId;
+        }
+    }
+
+    // Helper: get UserId from JWT
+    private Guid UserId
+    {
+        get
+        {
+            var userIdClaim = HttpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? HttpContext.User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+                throw new UnauthorizedAccessException("UserId not found in token.");
+            return userId;
+        }
+    }
 
     // List all rooms for the caller's company (from JWT)
     [HttpGet("company")]
     public async Task<IActionResult> GetCompanyRooms()
     {
-        var companyIdClaim = HttpContext.User.FindFirst("companyId")?.Value;
-        if (!Guid.TryParse(companyIdClaim, out var companyId)) return Forbid();
-        var rooms = await _context.Rooms.Where(r => r.CompanyId == companyId)
-                                       .Select(r => new { r.Id, r.Name, r.Capacity, r.Description })
-                                       .ToListAsync();
-        return Ok(rooms);
+        try
+        {
+            var rooms = await _roomService.GetCompanyRoomsAsync(CompanyId);
+            return Ok(rooms);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
     }
 
     
@@ -34,53 +67,44 @@ public class RoomController : ControllerBase
     public async Task<IActionResult> CreateRoom([FromBody] CreateRoomDto dto)
     {
         if (dto == null) return BadRequest();
-        var company = await _context.Companies.FindAsync(dto.CompanyId);
-        if (company == null) return NotFound("Company not found.");
-
-        var room = new Room
+        try
         {
-            Name = dto.Name,
-            Capacity = dto.Capacity,
-            Description = dto.Description,
-            CompanyId = dto.CompanyId
-        };
-        _context.Rooms.Add(room);
-        await _context.SaveChangesAsync();
-        return Ok(new { room.Id });
+            // Use companyId from JWT instead of DTO
+            var roomId = await _roomService.CreateRoomAsync(CompanyId, dto);
+            return Ok(new { Id = roomId });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
     }
     
     
     [HttpGet("{roomId:guid}/timeslots")]
     public async Task<IActionResult> GetAvailableTimeslots(Guid roomId, [FromQuery] DateTime date)
     {
-        date = DateTime.SpecifyKind(date, DateTimeKind.Utc);
-
-        var room = await _context.Rooms.Include(r => r.Company)
-            .FirstOrDefaultAsync(r => r.Id == roomId);
-        if (room == null) return NotFound();
-
-        var company = room.Company;
-        var start = date.Date.Add(company.WorkingStart);
-        var end = date.Date.Add(company.WorkingEnd);
-
-        // get all bookings for this room on this date
-        var bookings = await _context.Bookings
-            .Where(b => b.RoomId == roomId && b.StartAt.Date == date.Date)
-            .ToListAsync();
-
-        var slots = new Dictionary<DateTime, bool>();
-
-        for (var time = start; time < end; time = time.AddMinutes(15))
+        try
         {
-            // find if any booking overlaps with this slot
-            bool isBooked = bookings.Any(b =>
-                b.StartAt <= time && b.EndAt > time);
-
-            // booked → false (not available)
-            slots[time] = !isBooked;
+            // Pass companyId from JWT for validation and performance optimization
+            var slots = await _roomService.GetAvailableTimeslotsAsync(roomId, CompanyId, date);
+            return Ok(slots);
         }
-
-        return Ok(slots);
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (ForbiddenException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ex.Message);
+        }
     }
 
 
@@ -88,61 +112,94 @@ public class RoomController : ControllerBase
     // Book a room (basic overlap check)
     [HttpPost("{roomId:guid}/book")]
     [Authorize]
-    public async Task<IActionResult> BookRoom(Guid roomId, [FromBody] BookDto dto)
+    public async Task<IActionResult> BookRoom(Guid roomId, [FromBody] BookRoomDto dto)
     {
-        var room = await _context.Rooms.Include(r => r.Bookings).FirstOrDefaultAsync(r => r.Id == roomId);
-        if (room == null) return NotFound("Room not found.");
-
-        // Validate times
-        if (dto.StartAt >= dto.EndAt) return BadRequest("Invalid time range.");
-        // Optional: ensure within working hours e.g., 9:00-18:00 (server local)
-        // Check overlapping bookings
-        var overlap = room.Bookings.Any(b => !(dto.EndAt <= b.StartAt || dto.StartAt >= b.EndAt));
-        if (overlap) return Conflict("Time slot occupied.");
-
-        var userIdClaim = HttpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-            ?? HttpContext.User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
-        if (!Guid.TryParse(userIdClaim, out var userId)) return Forbid();
-
-        var booking = new Booking
+        try
         {
-            RoomId = roomId,
-            UserId = userId,
-            StartAt = dto.StartAt,
-            EndAt = dto.EndAt,
-            TimespanId = ComputeTimespanId(dto.StartAt) // optional
-        };
-        _context.Bookings.Add(booking);
-        await _context.SaveChangesAsync();
-        return Ok(new { booking.Id });
+            var bookingId = await _roomService.BookRoomAsync(roomId, UserId, dto);
+            return Ok(new { Id = bookingId });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (ConflictException ex)
+        {
+            return Conflict(ex.Message);
+        }
     }
 
     // Cancel own booking (or admin can cancel any if extended)
     [HttpDelete("booking/{bookingId:guid}")]
-    public async Task<IActionResult> CancelBooking(Guid bookingId, [FromQuery] Guid userId)
+    public async Task<IActionResult> CancelBooking(Guid bookingId)
     {
-        var booking = await _context.Bookings.FindAsync(bookingId);
-        if (booking == null) return NotFound();
-
-        // allow cancel if requester is owner or admin (simple check)
-        var requester = await _context.Users.FindAsync(userId);
-        if (requester == null) return Forbid();
-
-        if (requester.Role != Role.Admin || booking.UserId != userId)
+        try
+        {
+            // Use userId from JWT instead of query parameter
+            await _roomService.CancelBookingAsync(bookingId, UserId);
+            return Ok();
+        }
+        catch (UnauthorizedAccessException)
+        {
             return Forbid();
-
-        _context.Bookings.Remove(booking);
-        await _context.SaveChangesAsync();
-        return Ok();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (ForbiddenException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ex.Message);
+        }
     }
 
-    private int ComputeTimespanId(DateTime t)
+    [HttpGet("findroom")]
+    public async Task<IActionResult> FindRoom([FromQuery] RoomFilterDto filter)
     {
-        // timespan index within day (0..95); naive UTC->local not handled
-        return (int)(t.TimeOfDay.TotalMinutes / 15);
+        try
+        {
+            var rooms = await _roomService.FindRoomsAsync(CompanyId, filter);
+            return Ok(rooms);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    // Get booking info for a specific timeslot
+    [HttpGet("{roomId:guid}/booking-info")]
+    public async Task<IActionResult> GetBookingInfo(Guid roomId, [FromQuery] DateTime time)
+    {
+        try
+        {
+            // Pass companyId from JWT for validation
+            var bookingInfo = await _roomService.GetBookingInfoAsync(roomId, CompanyId, time);
+            return Ok(bookingInfo);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (ForbiddenException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ex.Message);
+        }
     }
 }
-
-// DTOs
-public record CreateRoomDto(Guid CompanyId, string Name, int Capacity, string Description);
-public record BookDto(DateTime StartAt, DateTime EndAt);
