@@ -14,7 +14,7 @@ using System;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services (global auth by default)
+// Add services (global auth by default, but exclude Swagger and health endpoints)
 builder.Services.AddControllers(options =>
 {
     var policy = new AuthorizationPolicyBuilder()
@@ -35,11 +35,12 @@ builder.Services.AddSwaggerGen(options =>
         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
         Description = "Enter 'Bearer {token}'"
     });
+    // Make security requirement optional (not required for Swagger UI access)
     options.AddSecurityRequirement(new()
     {
         {
             new() { Reference = new() { Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme, Id = "Bearer" } },
-            new string[] {}
+            Array.Empty<string>()
         }
     });
 });
@@ -159,15 +160,19 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
 app.UseCors("AllowLocal");
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Enable Swagger in all environments (useful for Railway healthcheck and API documentation)
+// Swagger must be after UseAuthorization to work properly
+app.UseSwagger();
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Room Booking API v1");
+    options.RoutePrefix = "swagger";
+});
+
 app.MapControllers();
 
 app.Run();
