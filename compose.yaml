@@ -1,9 +1,18 @@
-﻿version: "3.8"
-services:
+﻿services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "18473:18473"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - api
+    restart: unless-stopped
   api:
     image: dentager/room-booking:latest
-    ports:
-      - "18473:8080"
+    expose:
+      - "8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       DOTNET_RUNNING_IN_CONTAINER: "true"
