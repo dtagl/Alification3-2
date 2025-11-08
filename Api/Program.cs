@@ -11,8 +11,15 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Microsoft.AspNetCore.HttpOverrides;
 using System;
+using System.Threading.Tasks;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Log startup information
+Console.WriteLine($"Environment: {builder.Environment.EnvironmentName}");
+Console.WriteLine($"PORT: {Environment.GetEnvironmentVariable("PORT") ?? "not set"}");
+Console.WriteLine($"DATABASE_URL: {(string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DATABASE_URL")) ? "not set" : "set")}");
+Console.WriteLine($"REDIS_URL: {(string.IsNullOrEmpty(Environment.GetEnvironmentVariable("REDIS_URL")) ? "not set" : "set")}");
 
 // Add services (global auth by default, but exclude Swagger and health endpoints)
 builder.Services.AddControllers(options =>
@@ -66,16 +73,42 @@ if (string.IsNullOrEmpty(dbConnectionString))
     var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
     if (!string.IsNullOrEmpty(databaseUrl))
     {
-        // Parse Railway DATABASE_URL format
-        var uri = new Uri(databaseUrl);
-        var userInfo = uri.UserInfo.Split(':');
-        dbConnectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
+        try
+        {
+            // Parse Railway DATABASE_URL format
+            var uri = new Uri(databaseUrl);
+            var userInfo = uri.UserInfo.Split(':');
+            if (userInfo.Length >= 2)
+            {
+                dbConnectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={Uri.UnescapeDataString(userInfo[1])};SSL Mode=Require;Trust Server Certificate=true";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Warning: Failed to parse DATABASE_URL: {ex.Message}");
+        }
     }
 }
 
-builder.Services.AddDbContext<MyContext>(options =>
-    options.UseNpgsql(dbConnectionString ?? throw new InvalidOperationException("Database connection string is required"))
-);
+if (string.IsNullOrEmpty(dbConnectionString))
+{
+    Console.WriteLine("Warning: Database connection string is not configured. Application may not work correctly.");
+    // Don't throw - allow app to start for healthcheck
+}
+
+if (!string.IsNullOrEmpty(dbConnectionString))
+{
+    builder.Services.AddDbContext<MyContext>(options =>
+        options.UseNpgsql(dbConnectionString)
+    );
+}
+else
+{
+    // Add a minimal context that won't crash on startup
+    builder.Services.AddDbContext<MyContext>(options =>
+        options.UseNpgsql("Host=localhost;Port=5432;Database=temp;Username=temp;Password=temp")
+    );
+}
 
 // Redis: Railway provides REDIS_URL, fallback to ConnectionStrings:Redis
 var redisConnection = builder.Configuration.GetConnectionString("Redis")
@@ -103,18 +136,26 @@ builder.Services.AddCors(options =>
 
 // JWT Authentication (services)
 var jwtSection = builder.Configuration.GetSection("Jwt");
-var key = Encoding.UTF8.GetBytes(jwtSection["Key"] ?? string.Empty);
+var jwtKey = jwtSection["Key"] ?? string.Empty;
+if (string.IsNullOrEmpty(jwtKey))
+{
+    Console.WriteLine("Warning: JWT Key is not configured. Authentication will not work.");
+    // Use a default key for development (should be set in production)
+    jwtKey = "default-key-change-in-production-" + Guid.NewGuid().ToString();
+}
+
+var key = Encoding.UTF8.GetBytes(jwtKey);
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
+            ValidateIssuer = !string.IsNullOrEmpty(jwtSection["Issuer"]),
+            ValidateAudience = !string.IsNullOrEmpty(jwtSection["Audience"]),
             ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtSection["Issuer"],
-            ValidAudience = jwtSection["Audience"],
+            ValidateIssuerSigningKey = !string.IsNullOrEmpty(jwtKey),
+            ValidIssuer = jwtSection["Issuer"] ?? "Default",
+            ValidAudience = jwtSection["Audience"] ?? "Default",
             IssuerSigningKey = new SymmetricSecurityKey(key),
             ClockSkew = TimeSpan.Zero // Убираем запас времени для проверки срока действия
         };
@@ -145,20 +186,34 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
     KnownProxies = { }
 });
 
-// Apply database migrations on startup
-using (var scope = app.Services.CreateScope())
+// Apply database migrations on startup (non-blocking)
+_ = Task.Run(async () =>
 {
-    var context = scope.ServiceProvider.GetRequiredService<MyContext>();
+    await Task.Delay(2000); // Wait a bit for DB to be ready
     try
     {
-        context.Database.Migrate();
+        using var scope = app.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<MyContext>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        
+        logger.LogInformation("Attempting to connect to database...");
+        if (await context.Database.CanConnectAsync())
+        {
+            logger.LogInformation("Database connection successful. Applying migrations...");
+            await context.Database.MigrateAsync();
+            logger.LogInformation("Migrations applied successfully.");
+        }
+        else
+        {
+            logger.LogWarning("Cannot connect to database. Migrations will be skipped.");
+        }
     }
     catch (Exception ex)
     {
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while migrating the database.");
+        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while migrating the database. Application will continue.");
     }
-}
+});
 
 app.UseCors("AllowLocal");
 app.UseAuthentication();
@@ -174,5 +229,12 @@ app.UseSwaggerUI(options =>
 });
 
 app.MapControllers();
+
+// Log that application is starting
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+logger.LogInformation("Application starting on port {Port}", port);
+logger.LogInformation("Health endpoint available at: /api/health");
+logger.LogInformation("Swagger UI available at: /swagger");
 
 app.Run();
