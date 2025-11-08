@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Microsoft.AspNetCore.HttpOverrides;
+using System;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,13 +57,29 @@ builder.Services.AddScoped<ITelegramNotificationService, TelegramNotificationSer
 // Background Service for booking notifications
 builder.Services.AddHostedService<BookingNotificationBackgroundService>();
 
-// DB: replace "Default" connection string in appsettings.json
+// DB: Railway provides DATABASE_URL, fallback to ConnectionStrings:Default
+var dbConnectionString = builder.Configuration.GetConnectionString("Default");
+if (string.IsNullOrEmpty(dbConnectionString))
+{
+    // Try Railway's DATABASE_URL format: postgresql://user:pass@host:port/db
+    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+    if (!string.IsNullOrEmpty(databaseUrl))
+    {
+        // Parse Railway DATABASE_URL format
+        var uri = new Uri(databaseUrl);
+        var userInfo = uri.UserInfo.Split(':');
+        dbConnectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
+    }
+}
+
 builder.Services.AddDbContext<MyContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Default"))
+    options.UseNpgsql(dbConnectionString ?? throw new InvalidOperationException("Database connection string is required"))
 );
 
+// Redis: Railway provides REDIS_URL, fallback to ConnectionStrings:Redis
 var redisConnection = builder.Configuration.GetConnectionString("Redis")
-    ?? builder.Configuration.GetValue<string>("Redis:Configuration");
+    ?? builder.Configuration.GetValue<string>("Redis:Configuration")
+    ?? Environment.GetEnvironmentVariable("REDIS_URL");
 
 if (!string.IsNullOrWhiteSpace(redisConnection))
 {
@@ -118,10 +135,13 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// Trust forwarded headers from nginx reverse proxy
+// Trust forwarded headers (for Railway proxy or nginx reverse proxy)
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+    // Railway uses a proxy, so we need to trust it
+    KnownNetworks = { },
+    KnownProxies = { }
 });
 
 // Apply database migrations on startup

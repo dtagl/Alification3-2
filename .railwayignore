@@ -1,0 +1,54 @@
+# Railway ignore file - files to exclude from deployment
+
+# Development files
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+**/.idea/
+**/*.user
+**/*.suo
+**/*.cache
+
+# Documentation
+*.md
+!README.md
+
+# Docker compose (not needed on Railway)
+compose.yaml
+docker-compose.yml
+docker-compose.*.yml
+
+# Test files
+**/test/
+**/tests/
+**/*Test*.cs
+**/*Tests*.cs
+
+# Migration files (keep, but exclude from build if needed)
+# **/Migrations/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vs/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
