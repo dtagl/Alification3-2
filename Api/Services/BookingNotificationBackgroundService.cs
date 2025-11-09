@@ -49,17 +49,28 @@ public class BookingNotificationBackgroundService : BackgroundService
         var context = scope.ServiceProvider.GetRequiredService<MyContext>();
         var notificationService = scope.ServiceProvider.GetRequiredService<ITelegramNotificationService>();
 
-        var now = DateTime.UtcNow;
-        var targetTime = now + _notificationTimeBefore;
-        
-        // Находим бронирования, которые начинаются через 10 минут (с допуском ±1 минута)
-        var targetTimeStart = targetTime.AddMinutes(-1);
-        var targetTimeEnd = targetTime.AddMinutes(1);
+        var userTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Tashkent"); // UZT
+        var nowUtc = DateTime.UtcNow;
 
+// Конвертируем текущее UTC-время в локальное время пользователя
+        var nowUser = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, userTimeZone);
+
+// Время уведомления через 10 минут
+        var targetTimeUser = nowUser + _notificationTimeBefore;
+
+// Делаем ±1 минуту для поиска бронирований
+        var targetTimeStartUser = targetTimeUser.AddMinutes(-1);
+        var targetTimeEndUser = targetTimeUser.AddMinutes(1);
+
+// Конвертируем обратно в UTC для сравнения с базой
+        var targetTimeStartUtc = TimeZoneInfo.ConvertTimeToUtc(targetTimeStartUser, userTimeZone);
+        var targetTimeEndUtc = TimeZoneInfo.ConvertTimeToUtc(targetTimeEndUser, userTimeZone);
+
+// Получаем бронирования
         var upcomingBookings = await context.Bookings
             .Include(b => b.User)
             .Include(b => b.Room)
-            .Where(b => b.StartAt >= targetTimeStart && b.StartAt <= targetTimeEnd)
+            .Where(b => b.StartAt >= targetTimeStartUtc && b.StartAt <= targetTimeEndUtc)
             .ToListAsync(cancellationToken);
 
         if (!upcomingBookings.Any())
