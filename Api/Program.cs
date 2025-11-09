@@ -55,6 +55,7 @@ builder.Services.AddScoped<TelegramAuthService>();
 builder.Services.AddScoped<IRoomService, RoomService>();
 builder.Services.AddScoped<IHomepageService, HomepageService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<IOverAllService, OverAllService>();
 
 // HTTP Client Factory для Telegram Bot API
 builder.Services.AddHttpClient();
