@@ -17,7 +17,7 @@ public class HomepageService : IHomepageService
 
     public async Task<MyBookingsDto> GetMyBookingsAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        var now = DateTime.UtcNow;
+        var now = DateTime.UtcNow.AddHours(5); // UZT
 
         // Project to DTOs to avoid circular reference issues
         // No need for Include() when using Select() - EF Core will automatically include what's needed
