@@ -52,65 +52,79 @@ public class RoomService : IRoomService
         return room.Id;
     }
 
-    public async Task<IDictionary<DateTime, bool>> GetAvailableTimeslotsAsync(Guid roomId, Guid companyId, DateTime date, CancellationToken cancellationToken = default)
+public async Task<IDictionary<DateTime, bool>> GetAvailableTimeslotsAsync(
+    Guid roomId,
+    Guid companyId,
+    DateTime date,
+    CancellationToken cancellationToken = default)
+{
+    date = DateTime.SpecifyKind(date, DateTimeKind.Utc);
+    var cacheKey = BuildTimeslotCacheKey(roomId, date);
+
+    try
     {
-        date = DateTime.SpecifyKind(date, DateTimeKind.Utc);
-        var cacheKey = BuildTimeslotCacheKey(roomId, date);
-
-        try
+        var cached = await _cache.GetStringAsync(cacheKey, cancellationToken);
+        if (cached != null)
         {
-            var cached = await _cache.GetStringAsync(cacheKey, cancellationToken);
-            if (cached != null)
-            {
-                var cachedEntries = JsonSerializer.Deserialize<List<TimeslotCacheEntry>>(cached, SerializerOptions);
-                if (cachedEntries != null)
-                {
-                    return cachedEntries.ToDictionary(e => e.Start, e => e.IsAvailable);
-                }
-            }
+            var cachedEntries = JsonSerializer.Deserialize<List<TimeslotCacheEntry>>(cached, SerializerOptions);
+            if (cachedEntries != null)
+                return cachedEntries.ToDictionary(e => e.Start, e => e.IsAvailable);
         }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to read room timeslots from cache for {RoomId} on {Date}", roomId, date.Date);
-        }
-
-        // Validate room exists and belongs to the company (optimized query with companyId filter)
-        var room = await _context.Rooms
-            .Include(r => r.Company)
-            .FirstOrDefaultAsync(r => r.Id == roomId && r.CompanyId == companyId, cancellationToken);
-        if (room == null)
-            throw new KeyNotFoundException("Room not found.");
-
-        var company = room.Company;
-        var start = date.Date.Add(company.WorkingStart);
-        var end = date.Date.Add(company.WorkingEnd);
-
-        var bookings = await _context.Bookings
-            .Where(b => b.RoomId == roomId && b.StartAt.Date == date.Date)
-            .ToListAsync(cancellationToken);
-
-        var slots = new Dictionary<DateTime, bool>();
-        for (var time = start; time < end; time = time.AddMinutes(15))
-        {
-            var isBooked = bookings.Any(b => b.StartAt <= time && b.EndAt > time);
-            slots[time] = !isBooked;
-        }
-
-        try
-        {
-            var cachePayload = JsonSerializer.Serialize(slots.Select(kvp => new TimeslotCacheEntry(kvp.Key, kvp.Value)), SerializerOptions);
-            await _cache.SetStringAsync(cacheKey, cachePayload, new DistributedCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
-            }, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to cache room timeslots for {RoomId} on {Date}", roomId, date.Date);
-        }
-
-        return slots;
     }
+    catch (Exception ex)
+    {
+        _logger.LogWarning(ex, "Failed to read room timeslots from cache for {RoomId} on {Date}", roomId, date.Date);
+    }
+
+    // Проверяем, что комната принадлежит компании
+    var room = await _context.Rooms
+        .Include(r => r.Company)
+        .FirstOrDefaultAsync(r => r.Id == roomId && r.CompanyId == companyId, cancellationToken);
+
+    if (room == null)
+        throw new KeyNotFoundException("Room not found.");
+
+    var company = room.Company;
+    var start = date.Date.Add(company.WorkingStart);
+    var end = date.Date.Add(company.WorkingEnd);
+
+    // Загружаем все бронирования на этот день
+    var bookings = await _context.Bookings
+        .Where(b => b.RoomId == roomId && b.StartAt.Date == date.Date)
+        .ToListAsync(cancellationToken);
+
+    var slots = new Dictionary<DateTime, bool>();
+
+    for (var time = start; time < end; time = time.AddMinutes(15))
+    {
+        var slotStart = time;
+        var slotEnd = time.AddMinutes(15);
+
+        // Проверяем пересечение интервалов
+        var isBooked = bookings.Any(b =>
+            b.StartAt < slotEnd && b.EndAt > slotStart);
+
+        slots[slotStart] = !isBooked;
+    }
+
+    try
+    {
+        var cachePayload = JsonSerializer.Serialize(
+            slots.Select(kvp => new TimeslotCacheEntry(kvp.Key, kvp.Value)),
+            SerializerOptions);
+
+        await _cache.SetStringAsync(cacheKey, cachePayload, new DistributedCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+        }, cancellationToken);
+    }
+    catch (Exception ex)
+    {
+        _logger.LogWarning(ex, "Failed to cache room timeslots for {RoomId} on {Date}", roomId, date.Date);
+    }
+
+    return slots;
+}
 
     public async Task<Guid> BookRoomAsync(Guid roomId, Guid userId, BookRoomDto dto, CancellationToken cancellationToken = default)
     {
