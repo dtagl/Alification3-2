@@ -102,7 +102,7 @@ public async Task<IDictionary<DateTime, bool>> GetAvailableTimeslotsAsync(
 
         // Проверяем пересечение интервалов
         var isBooked = bookings.Any(b =>
-            b.StartAt < slotEnd && b.EndAt > slotStart.AddSeconds(0.5));
+            b.StartAt < slotEnd && b.EndAt > slotStart.AddSeconds(1));
 
         slots[slotStart] = !isBooked;
     }
