@@ -5,6 +5,8 @@ namespace Api.Controllers;
 
 [ApiController]
 [Route("api/overall")]
+
+//this controller should not appear in UI, only for testing and admin purposes
 public class OverAllController:ControllerBase
 {
     private readonly IOverAllService _service;
