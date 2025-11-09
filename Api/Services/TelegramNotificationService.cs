@@ -51,7 +51,7 @@ public class TelegramNotificationService : ITelegramNotificationService
                 return;
             }
 
-            var timeUntilBooking = booking.StartAt - DateTime.UtcNow;
+            var timeUntilBooking = booking.StartAt - DateTime.UtcNow.AddHours(5); // UZT
             var minutesUntilBooking = (int)timeUntilBooking.TotalMinutes;
 
             var message = $"📅 Напоминание о бронировании\n\n" +
