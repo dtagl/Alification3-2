@@ -109,7 +109,7 @@ public class BookingNotificationBackgroundService : BackgroundService
                 {
                     BookingId = booking.Id,
                     NotificationType = "10min_before",
-                    SentAt = now
+                    SentAt = nowUser
                 };
 
                 context.NotificationsSent.Add(notificationSent);
