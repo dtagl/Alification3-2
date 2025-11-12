@@ -20,14 +20,16 @@ export default function CreateCompany() {
     setLoading(true)
     setError(null)
     try {
-      const tg = (window as any).Telegram?.WebApp
+      const tg = window.Telegram?.WebApp
       const tgid = tg?.initDataUnsafe?.user?.id as number | undefined
       const payload = { ...form, telegramId: tgid ?? null }
       const res = await api.post<string>('/first/create-company', payload)
       setToken(res.data)
       nav('/home', { replace: true })
     } catch (err: any) {
-      setError(err?.response?.data || 'Ошибка создания компании')
+      const data = err?.response?.data
+      const msg = typeof data === 'string' ? data : data?.detail || data?.title || 'Ошибка создания компании'
+      setError(msg)
     } finally {
       setLoading(false)
     }

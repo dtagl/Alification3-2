@@ -18,13 +18,19 @@ export default function Login() {
     setLoading(true)
     setError(null)
     try {
-      const tgid = (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id as number | undefined
-      const payload = { ...form, telegramId: tgid ?? 0 }
+      const tgid = window.Telegram?.WebApp?.initDataUnsafe?.user?.id as number | undefined
+      if (!tgid) {
+        setError('Откройте это приложение внутри Telegram, чтобы войти (Telegram WebApp не обнаружен).')
+        return
+      }
+      const payload = { ...form, telegramId: tgid }
       const res = await api.post<string>('/first/login-telegram', payload)
       setToken(res.data)
       nav('/home', { replace: true })
     } catch (err: any) {
-      setError(err?.response?.data || 'Ошибка входа')
+      const data = err?.response?.data
+      const msg = typeof data === 'string' ? data : data?.detail || data?.title || 'Ошибка входа'
+      setError(msg)
     } finally {
       setLoading(false)
     }
