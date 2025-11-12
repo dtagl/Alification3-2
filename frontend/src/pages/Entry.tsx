@@ -10,7 +10,10 @@ export default function Entry() {
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp
+    tg?.ready?.()
+    tg?.expand?.()
     const user = tg?.initDataUnsafe?.user
+    console.log('Telegram WebApp detected:', !!tg, 'User:', user)
 
     async function run() {
       try {
