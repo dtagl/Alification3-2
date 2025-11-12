@@ -31,7 +31,12 @@ public class FirstController : ControllerBase
     private string GenerateToken(User user)
     {
         var jwt = _config.GetSection("Jwt");
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["Key"]!));
+        var keyStr = jwt["Key"];
+        if (string.IsNullOrEmpty(keyStr))
+        {
+            keyStr = "default-key-change-in-production-" + Guid.NewGuid().ToString();
+        }
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyStr));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var expires = DateTime.UtcNow.AddMinutes(int.TryParse(jwt["ExpiryMinutes"], out var m) ? m : 120);
 
@@ -44,8 +49,8 @@ public class FirstController : ControllerBase
         };
 
         var token = new JwtSecurityToken(
-            issuer: jwt["Issuer"],
-            audience: jwt["Audience"],
+            issuer: string.IsNullOrWhiteSpace(jwt["Issuer"]) ? "Default" : jwt["Issuer"],
+            audience: string.IsNullOrWhiteSpace(jwt["Audience"]) ? "Default" : jwt["Audience"],
             claims: claims,
             expires: expires,
             signingCredentials: creds

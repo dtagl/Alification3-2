@@ -46,13 +46,13 @@ export default function Admin() {
 
   async function changeCompanyName(e: React.FormEvent) {
     e.preventDefault()
-    await api.put('/admin/change-company-name', companyForm.name, { headers: { 'Content-Type': 'application/json' } })
+    await api.put('/admin/change-company-name', JSON.stringify(companyForm.name), { headers: { 'Content-Type': 'application/json' } })
     await loadAll()
   }
 
   async function changePassword(e: React.FormEvent) {
     e.preventDefault()
-    await api.put('/admin/change-password', companyForm.password, { headers: { 'Content-Type': 'application/json' } })
+    await api.put('/admin/change-password', JSON.stringify(companyForm.password), { headers: { 'Content-Type': 'application/json' } })
   }
 
   async function makeAdmin(id: string) {

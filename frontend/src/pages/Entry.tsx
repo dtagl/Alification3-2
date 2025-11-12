@@ -3,11 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api'
 import { setToken } from '@/lib/auth'
 
-declare global {
-  interface Window {
-    Telegram: any
-  }
-}
+ 
 
 export default function Entry() {
   const navigate = useNavigate()
