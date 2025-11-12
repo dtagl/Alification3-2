@@ -229,7 +229,14 @@ app.UseSwaggerUI(options =>
     options.RoutePrefix = "swagger";
 });
 
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
+
 app.MapControllers();
+app.MapFallbackToFile("index.html");
+
+
 
 // Log that application is starting
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
