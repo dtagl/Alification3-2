@@ -37,7 +37,10 @@ export default function Room() {
 
   useEffect(() => {
     async function load() {
-      const dateIso = new Date(selectedDate).toISOString()
+      // send midnight UTC of the selected calendar day to the server
+      const d = new Date(selectedDate)
+      d.setUTCHours(0, 0, 0, 0)
+      const dateIso = d.toISOString()
       const res = await api.get<Record<string, boolean>>(`/rooms/${roomId}/timeslots`, { params: { date: dateIso } })
       setSlots(res.data)
       setInfo(null)
@@ -79,14 +82,18 @@ export default function Room() {
             <div className="font-semibold mb-2">{hour}:00</div>
             <div className="grid grid-cols-4 gap-2">
               {items.map((it, idx) => {
-                const iso = `${selectedDate.toISOString().substring(0,10)}T${it.time}:00.000Z`
+                // Build ISO using UTC hours to stay consistent with server (which operates in UTC baseline)
+                const [h, m] = it.time.split(':').map(Number)
+                const d = new Date(selectedDate)
+                d.setUTCHours(h, m, 0, 0)
+                const iso = d.toISOString()
                 const isFree = it.free
                 return (
                   <button
                     key={idx}
                     onClick={() => { bookingInfo(iso) }}
                     className={`px-2 py-2 rounded border text-sm ${isFree ? 'bg-emerald-50 border-emerald-300' : 'bg-red-50 border-red-300 line-through'}`}
-                    disabled={!isFree}
+                    // Allow clicking even if booked, so we can show who booked
                     title={isFree ? 'Свободно' : 'Занято'}
                   >
                     {it.time}

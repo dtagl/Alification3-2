@@ -88,9 +88,9 @@ public async Task<IDictionary<DateTime, bool>> GetAvailableTimeslotsAsync(
     var start = date.Date.Add(company.WorkingStart);
     var end = date.Date.Add(company.WorkingEnd);
 
-    // Загружаем все бронирования на этот день
+    // Загружаем бронирования, пересекающиеся с рабочим днём
     var bookings = await _context.Bookings
-        .Where(b => b.RoomId == roomId && b.StartAt.Date == date.Date)
+        .Where(b => b.RoomId == roomId && b.StartAt < end && b.EndAt > start)
         .ToListAsync(cancellationToken);
 
     var slots = new Dictionary<DateTime, bool>();
@@ -167,7 +167,8 @@ public async Task<IDictionary<DateTime, bool>> GetAvailableTimeslotsAsync(
         if (requester == null)
             throw new ForbiddenException("Requester not found.");
 
-        if (requester.Role != Role.Admin || booking.UserId != requesterId)
+        // Allow: Admin cancels any; or user cancels own booking
+        if (requester.Role != Role.Admin && booking.UserId != requesterId)
             throw new ForbiddenException("Not allowed to cancel this booking.");
 
         _context.Bookings.Remove(booking);
