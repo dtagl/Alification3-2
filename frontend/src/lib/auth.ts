@@ -1,5 +1,4 @@
-import jwtDecode from 'jwt-decode'
-
+import { jwtDecode } from 'jwt-decode'
 const STORAGE_KEY = 'token'
 
 export function setToken(token: string) {
