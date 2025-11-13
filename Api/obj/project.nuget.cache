@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "jkY+Rfs093E=",
+  "dgSpecHash": "q6t4xU5T/D8=",
   "success": true,
-  "projectFilePath": "C:\\Users\\denta\\Desktop\\C#course\\Therewillbe demos\\Alification3\\Api\\Api.csproj",
+  "projectFilePath": "C:\\Users\\denta\\Desktop\\CSharpCourse\\Therewillbedemos\\Alification3\\Api\\Api.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\denta\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512",
     "C:\\Users\\denta\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",

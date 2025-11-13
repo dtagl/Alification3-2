@@ -8,10 +8,7 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Microsoft.AspNetCore.HttpOverrides;
-using System;
-using System.Threading.Tasks;
 
 var builder = WebApplication.CreateBuilder(args);
 
