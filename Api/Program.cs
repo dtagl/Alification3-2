@@ -29,6 +29,7 @@ builder.Services.AddControllers(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
+    
     options.SwaggerDoc("v1", new() { Title = "Api", Version = "v1" });
     options.AddSecurityDefinition("Bearer", new()
     {
