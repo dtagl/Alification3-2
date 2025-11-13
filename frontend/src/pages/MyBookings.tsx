@@ -23,7 +23,7 @@ export default function MyBookings() {
     <div className="p-6 space-y-6">
       <BackButton />
       <section>
-        <h2 className="text-xl font-bold mb-3">Текущиеee </h2>
+        <h2 className="text-xl font-bold mb-3">Текущие </h2>
         <div className="grid gap-3">
           {data.active.map((b: any) => (
             <div key={b.id} className="border rounded-lg p-3 flex justify-between items-center">
