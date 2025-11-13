@@ -114,6 +114,9 @@ export default function Home() {
 
 
 
+// я тут изменил то что было в header 👇 это ваш , 👆это мой
+
+
 // {/* <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-10">
 //       <div className="flex items-center gap-3">
 //         <BackButton />
