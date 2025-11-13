@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
+import BackButton from '@/components/BackButton';
 
 export default function MyBookings() {
-  const [data, setData] = useState<{active:any[]; past:any[]}>({active:[], past:[]})
+  const [data, setData] = useState<{ active: any[]; past: any[] }>({ active: [], past: [] })
 
   useEffect(() => {
     async function load() {
@@ -20,6 +21,7 @@ export default function MyBookings() {
 
   return (
     <div className="p-6 space-y-6">
+      <BackButton />
       <section>
         <h2 className="text-xl font-bold mb-3">Текущие</h2>
         <div className="grid gap-3">
@@ -29,7 +31,7 @@ export default function MyBookings() {
                 <div className="font-semibold">{b.roomName}</div>
                 <div className="text-sm text-gray-600">{new Date(b.startAt).toLocaleString()} — {new Date(b.endAt).toLocaleString()}</div>
               </div>
-              <button onClick={()=>cancel(b.id)} className="px-3 py-2 rounded bg-red-600 text-white">Отменить</button>
+              <button onClick={() => cancel(b.id)} className="px-3 py-2 rounded bg-red-600 text-white">Отменить</button>
             </div>
           ))}
         </div>
