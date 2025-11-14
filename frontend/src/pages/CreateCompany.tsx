@@ -75,7 +75,7 @@ export default function CreateCompany() {
         <input
           required
           placeholder="Название компании"
-          className="border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition"
+          className="border border-gray-300 rounded-lg text-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition"
           value={form.companyName}
           onChange={e => setForm(f => ({ ...f, companyName: e.target.value }))}
         />
@@ -84,14 +84,14 @@ export default function CreateCompany() {
           required
           type="password"
           placeholder="Пароль компании"
-          className="border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition"
+          className="border border-gray-300 rounded-lg px-4 text-white py-3 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition"
           value={form.password}
           onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
         />
 
         <input
           placeholder="Ваше имя (опционально)"
-          className="border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition"
+          className="border border-gray-300 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition"
           value={form.userName}
           onChange={e => setForm(f => ({ ...f, userName: e.target.value }))}
         />
@@ -102,7 +102,7 @@ export default function CreateCompany() {
             <input
               required
               placeholder="09:00"
-              className="border border-gray-300 rounded-lg px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition"
+              className="border border-gray-300 rounded-lg px-4 py-3 text-white w-full focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition"
               value={form.workingStart}
               onChange={e => setForm(f => ({ ...f, workingStart: e.target.value }))}
             />
@@ -112,7 +112,7 @@ export default function CreateCompany() {
             <input
               required
               placeholder="18:00"
-              className="border border-gray-300 rounded-lg px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition"
+              className="border border-gray-300 rounded-lg px-4 text-white py-3 w-full focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition"
               value={form.workingEnd}
               onChange={e => setForm(f => ({ ...f, workingEnd: e.target.value }))}
             />
