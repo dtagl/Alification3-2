@@ -18,6 +18,7 @@ export default function AvailableNow() {
 
   return (
     <div className="p-6">
+      
       <h1 className="text-2xl font-bold mb-4">Свободные сейчас</h1>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {rooms.map(r => (

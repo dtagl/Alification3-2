@@ -25,25 +25,62 @@
 
 
 
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+// import { useNavigate } from "react-router-dom";
+// import { ArrowLeft } from "lucide-react";
 
-export default function BackButton() {
-  const nav = useNavigate();
+// export default function BackButton() {
+//   const nav = useNavigate();
 
-  return (
-    <button
-      onClick={() => nav(-1)}
-      className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 
-                 hover:bg-gray-100 hover:border-gray-400 transition-all active:scale-[0.97] shadow-sm"
-    >
-      <ArrowLeft className="w-4 h-4" />
-      <span>Назад</span>
-    </button>
-  );
-}
+//   return (
+//     <button
+//       onClick={() => nav(-1)}
+//       className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 
+//                  hover:bg-gray-100 hover:border-gray-400 transition-all active:scale-[0.97] shadow-sm"
+//     >
+//       <ArrowLeft className="w-4 h-4" />
+//       <span>Назад</span>
+//     </button>
+//   );
+// }
 
 
 
 // это я создал для кгопки 'Назад' 
 
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, ArrowRight } from "lucide-react";
+
+
+export default function BackButton() {
+  const nav = useNavigate();
+
+
+  return (
+    <div className="w-full flex gap-[20px]  items-center justify-center px-4 py-3  shadow-sm border-b ">
+      {/* Back Button */}
+      <button
+        onClick={() => nav(-1)}
+        className="flex items-center gap-2 px-2 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 hover:border-gray-400 transition-all active:scale-[0.97] shadow-sm"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        <span>Назад</span>
+      </button>
+
+
+      {/* Company Name */}
+      <div className="text-[15px] font-semibold text-gray-800 select-none">
+        {"ALIF_PROJECT"}
+      </div>
+
+
+      {/* Forward Button */}
+      <button
+        onClick={() => nav(1)}
+        className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 hover:border-gray-400 transition-all active:scale-[0.97] shadow-sm"
+      >
+        <span>Вперёд</span>
+        <ArrowRight className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}

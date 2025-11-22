@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api'
 import { setToken } from '@/lib/auth'
+import { Backpack } from 'lucide-react'
+import BackButton from '@/components/BackButton'
 
 export default function CreateCompany() {
   const nav = useNavigate()
@@ -61,10 +63,12 @@ export default function CreateCompany() {
     // это ваш а то что внизу мой 
 
 
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
+      <BackButton/>
+
       <form
         onSubmit={submit}
-        className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 grid gap-6"
+        className="w-full max-w-md  rounded-2xl shadow-lg p-8 grid gap-6"
       >
         <h1 className="text-2xl font-extrabold text-gray-800 text-center">Создать компанию</h1>
 
