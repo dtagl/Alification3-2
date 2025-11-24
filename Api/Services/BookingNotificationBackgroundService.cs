@@ -15,7 +15,7 @@ public class BookingNotificationBackgroundService : BackgroundService
     private readonly TimeSpan _notificationTimeBefore = TimeSpan.FromMinutes(10); // Уведомление за 10 минут
 
     public BookingNotificationBackgroundService(
-        IServiceProvider serviceProvider,
+        IServiceProvider serviceProvider, 
         ILogger<BookingNotificationBackgroundService> logger)
     {
         _serviceProvider = serviceProvider;

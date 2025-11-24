@@ -15,6 +15,7 @@ public class AdminService : IAdminService
         _context = context;
     }
 
+    //cancelation token added but not used in controller yet
     public async Task<CompanyOverviewDto> GetCompanyOverviewAsync(Guid companyId, CancellationToken cancellationToken = default)
     {
         var totalRooms = await _context.Rooms.CountAsync(r => r.CompanyId == companyId, cancellationToken);
