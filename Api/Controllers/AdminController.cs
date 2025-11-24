@@ -35,7 +35,7 @@ public class AdminController : ControllerBase
     }
 
     // ---------------------------
-    // ✅ 2. Room utilization (percentage of booked time)
+    // ✅ 2. Room utilization (percentage of booked time over total available time)
     // ---------------------------
     [HttpGet("room-utilization")]
     public async Task<IActionResult> GetRoomUtilization()

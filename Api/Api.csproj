@@ -29,4 +29,9 @@
       </Content>
     </ItemGroup>
 
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-C83_FH59.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-ivMXHd5W.css" />
+    </ItemGroup>
+
 </Project>

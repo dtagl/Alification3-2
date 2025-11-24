@@ -29,6 +29,7 @@ builder.Services.AddControllers(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
+    
     options.SwaggerDoc("v1", new() { Title = "Api", Version = "v1" });
     options.AddSecurityDefinition("Bearer", new()
     {
@@ -40,7 +41,7 @@ builder.Services.AddSwaggerGen(options =>
         Description = "Enter 'Bearer {token}'"
     });
     // Make security requirement optional (not required for Swagger UI access)
-    options.AddSecurityRequirement(new()
+    options.AddSecurityRequirement(new ()
     {
         {
             new() { Reference = new() { Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme, Id = "Bearer" } },
@@ -54,7 +55,7 @@ builder.Services.AddScoped<IHomepageService, HomepageService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IOverAllService, OverAllService>();
 
-// HTTP Client Factory для Telegram Bot API
+// HTTP Client Factory для Telegram Bot API это как аддскопед ххтпклиент
 builder.Services.AddHttpClient();
 
 // Telegram Notification Service
@@ -175,7 +176,7 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// Trust forwarded headers (for Railway proxy or nginx reverse proxy)
+// Trust forwarded headers (for Railway proxy or nginx reverse proxy) скипнуть прокси
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,

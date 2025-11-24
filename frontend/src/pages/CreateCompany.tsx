@@ -36,27 +36,96 @@ export default function CreateCompany() {
   }
 
   return (
-    <div className="min-h-screen p-6 grid place-items-center">
-      <form onSubmit={submit} className="max-w-lg w-full bg-white rounded-xl shadow p-6 grid gap-4">
-        <h1 className="text-xl font-bold">Создать компанию</h1>
-        {error && <div className="text-red-600 text-sm">{error}</div>}
-        <input required placeholder="Название компании" className="border rounded px-3 py-2" value={form.companyName} onChange={e=>setForm(f=>({...f, companyName:e.target.value}))} />
-        <input required type="password" placeholder="Пароль компании" className="border rounded px-3 py-2" value={form.password} onChange={e=>setForm(f=>({...f, password:e.target.value}))} />
-        <input placeholder="Ваше имя (опционально)" className="border rounded px-3 py-2" value={form.userName} onChange={e=>setForm(f=>({...f, userName:e.target.value}))} />
-        <div className="grid grid-cols-2 gap-3">
+    // <div className="min-h-screen p-6 grid place-items-center">
+    //   <form onSubmit={submit} className="max-w-lg w-full bg-white rounded-xl shadow p-6 grid gap-4">
+    //     <h1 className="text-xl font-bold">Создать компанию</h1>
+    //     {error && <div className="text-red-600 text-sm">{error}</div>}
+    //     <input required placeholder="Название компании" className="border rounded px-3 py-2" value={form.companyName} onChange={e=>setForm(f=>({...f, companyName:e.target.value}))} />
+    //     <input required type="password" placeholder="Пароль компании" className="border rounded px-3 py-2" value={form.password} onChange={e=>setForm(f=>({...f, password:e.target.value}))} />
+    //     <input placeholder="Ваше имя (опционально)" className="border rounded px-3 py-2" value={form.userName} onChange={e=>setForm(f=>({...f, userName:e.target.value}))} />
+    //     <div className="grid grid-cols-2 gap-3">
+    //       <div>
+    //         <label className="text-sm text-gray-600">Начало рабочего дня</label>
+    //         <input required placeholder="09:00:00" className="border rounded px-3 py-2 w-full" value={form.workingStart} onChange={e=>setForm(f=>({...f, workingStart:e.target.value}))} />
+    //       </div>
+    //       <div>
+    //         <label className="text-sm text-gray-600">Конец рабочего дня</label>
+    //         <input required placeholder="18:00:00" className="border rounded px-3 py-2 w-full" value={form.workingEnd} onChange={e=>setForm(f=>({...f, workingEnd:e.target.value}))} />
+    //       </div>
+    //     </div>
+    //     <button disabled={loading} className="px-4 py-2 rounded-lg bg-sky-600 text-white font-medium disabled:opacity-50">
+    //       {loading ? 'Создаем...' : 'Создать'}
+    //     </button>
+    //   </form>
+    // </div>
+
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
+      <form
+        onSubmit={submit}
+        className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 grid gap-6"
+      >
+        <h1 className="text-2xl font-extrabold text-gray-800 text-center">Создать компанию</h1>
+
+        {error && (
+          <div className="text-red-600 text-sm bg-red-100 p-2 rounded">{error}</div>
+        )}
+
+        <input
+          required
+          placeholder="Название компании"
+          className="border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition"
+          value={form.companyName}
+          onChange={e => setForm(f => ({ ...f, companyName: e.target.value }))}
+        />
+
+        <input
+          required
+          type="password"
+          placeholder="Пароль компании"
+          className="border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition"
+          value={form.password}
+          onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+        />
+
+        <input
+          placeholder="Ваше имя (опционально)"
+          className="border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition"
+          value={form.userName}
+          onChange={e => setForm(f => ({ ...f, userName: e.target.value }))}
+        />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="text-sm text-gray-600">Начало рабочего дня</label>
-            <input required placeholder="09:00:00" className="border rounded px-3 py-2 w-full" value={form.workingStart} onChange={e=>setForm(f=>({...f, workingStart:e.target.value}))} />
+            <label className="text-sm text-gray-500 mb-1 block">Начало рабочего дня</label>
+            <input
+              required
+              placeholder="09:00"
+              className="border border-gray-300 rounded-lg px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition"
+              value={form.workingStart}
+              onChange={e => setForm(f => ({ ...f, workingStart: e.target.value }))}
+            />
           </div>
           <div>
-            <label className="text-sm text-gray-600">Конец рабочего дня</label>
-            <input required placeholder="18:00:00" className="border rounded px-3 py-2 w-full" value={form.workingEnd} onChange={e=>setForm(f=>({...f, workingEnd:e.target.value}))} />
+            <label className="text-sm text-gray-500 mb-1 block">Конец рабочего дня</label>
+            <input
+              required
+              placeholder="18:00"
+              className="border border-gray-300 rounded-lg px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition"
+              value={form.workingEnd}
+              onChange={e => setForm(f => ({ ...f, workingEnd: e.target.value }))}
+            />
           </div>
         </div>
-        <button disabled={loading} className="px-4 py-2 rounded-lg bg-sky-600 text-white font-medium disabled:opacity-50">
+
+        <button
+          disabled={loading}
+          className="w-full px-4 py-3 rounded-xl bg-sky-600 text-white font-semibold hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 transition disabled:opacity-50"
+        >
           {loading ? 'Создаем...' : 'Создать'}
         </button>
       </form>
     </div>
+
+
   )
 }
