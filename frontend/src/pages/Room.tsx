@@ -150,6 +150,9 @@ function daysAhead(n: number) {
   return arr
 }
 
+// <!-- test -->
+
+
 function groupByHour(slots: Record<string, boolean>) {
   const entries = Object.entries(slots).sort(
     (a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime()
