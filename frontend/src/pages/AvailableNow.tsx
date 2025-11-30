@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
 import { useNavigate } from 'react-router-dom'
+import BackButton from '@/components/BackButton';
 
 type Room = { id: string; name: string; capacity: number; description: string }
 
@@ -18,6 +19,8 @@ export default function AvailableNow() {
 
   return (
     <div className="p-6">
+      <BackButton/>
+      
       <h1 className="text-2xl font-bold mb-4">Свободные сейчас</h1>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {rooms.map(r => (

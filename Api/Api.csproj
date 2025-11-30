@@ -32,6 +32,8 @@
     <ItemGroup>
       <_ContentIncludedByDefault Remove="wwwroot\assets\index-C83_FH59.js" />
       <_ContentIncludedByDefault Remove="wwwroot\assets\index-ivMXHd5W.css" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-CV98iOux.css" />
+      <_ContentIncludedByDefault Remove="wwwroot\assets\index-Dh2TCB4f.js" />
     </ItemGroup>
 
 </Project>

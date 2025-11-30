@@ -1,8 +1,10 @@
+import BackButton from '@/components/BackButton'
 import { Link } from 'react-router-dom'
 
 export default function Join() {
   return (
     <div className="min-h-screen grid place-items-center p-6">
+           <BackButton/>
       <div className="max-w-md w-full space-y-6">
         <h1 className="text-2xl font-bold text-center">Присоединение</h1>
         <div className="grid gap-3">

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api'
 import { setToken } from '@/lib/auth'
+import BackButton from '@/components/BackButton'
 
 export default function Login() {
   const nav = useNavigate()
@@ -38,6 +39,8 @@ export default function Login() {
 
   return (
     <div className="min-h-screen p-6 grid place-items-center">
+           <BackButton/>
+      
       <form onSubmit={submit} className="max-w-lg w-full bg-white rounded-xl shadow p-6 grid gap-4">
         <h1 className="text-xl font-bold">Вход</h1>
         {error && <div className="text-red-600 text-sm">{error}</div>}
