@@ -2,8 +2,9 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api'
 import { setToken } from '@/lib/auth'
+import BackButton from '@/components/BackButton'
 
- 
+
 
 export default function Entry() {
   const navigate = useNavigate()
@@ -40,6 +41,7 @@ export default function Entry() {
 
   return (
     <div className="min-h-screen grid place-items-center p-6">
+      <BackButton />
       <div className="max-w-md w-full text-center space-y-4">
         <h1 className="text-2xl font-bold">Добро пожаловать</h1>
         <p className="text-gray-600">Проверяем ваш аккаунт...</p>
